@@ -1,0 +1,2071 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude 3.7 エンジニアリングガイド (初心者向け)</title>
+    <style>
+        :root {
+            --primary: #7a5af5;
+            --primary-light: #9d85f2;
+            --secondary: #f5f5f7;
+            --accent: #6366f1;
+            --text: #1f2937;
+            --text-light: #6b7280;
+            --bg: #ffffff;
+            --card-bg: #f9fafb;
+            --border: #e5e7eb;
+            --highlight: #ffedd5;
+            --highlight-border: #fdba74;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            color: var(--text);
+            background-color: var(--bg);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 2rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .header-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.1;
+            background-image: 
+                radial-gradient(circle at 20% 30%, var(--primary-light) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, var(--accent) 0%, transparent 50%);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            margin: 2rem 0 1rem;
+            color: var(--primary);
+        }
+
+        h3 {
+            font-size: 1.4rem;
+            margin: 1.5rem 0 0.75rem;
+            color: var(--text);
+        }
+
+        p {
+            margin-bottom: 1rem;
+        }
+
+        .nav-container {
+            background-color: var(--secondary);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .nav-links a {
+            color: var(--text);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .active {
+            color: var(--primary) !important;
+            border-bottom: 2px solid var(--primary);
+        }
+
+        section {
+            padding: 3rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--primary);
+        }
+
+        .prompt-example {
+            background-color: #f0f4f8;
+            border-left: 4px solid var(--primary);
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+
+        .prompt-instruction {
+            background-color: var(--highlight);
+            border: 1px solid var(--highlight-border);
+            border-radius: 4px;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-size: 0.95rem;
+        }
+
+        .copy-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            float: right;
+            margin-top: -0.5rem;
+            transition: background-color 0.3s;
+        }
+
+        .copy-btn:hover {
+            background-color: var(--primary-light);
+        }
+
+        .diagram {
+            width: 100%;
+            height: auto;
+            margin: 1.5rem 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            background-color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .diagram img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1.5rem;
+        }
+
+        .tab {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab.active {
+            border-bottom: 2px solid var(--primary);
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .feature-card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .feature-icon {
+            background-color: var(--primary-light);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .workflow-chart {
+            margin: 2rem 0;
+            padding: 1rem;
+            background-color: var(--card-bg);
+            border-radius: 8px;
+        }
+
+        .workflow-step {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .workflow-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 40px;
+            left: 20px;
+            width: 2px;
+            height: calc(100% + 1rem);
+            background-color: var(--border);
+        }
+
+        .step-number {
+            background-color: var(--primary);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        footer {
+            background-color: var(--secondary);
+            padding: 3rem 0;
+            text-align: center;
+            color: var(--text-light);
+        }
+
+        .term-tooltip {
+            position: relative;
+            display: inline-block;
+            border-bottom: 1px dotted var(--primary);
+            cursor: help;
+        }
+
+        .term-tooltip .tooltip-text {
+            visibility: hidden;
+            width: 300px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .term-tooltip .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent;
+        }
+
+        .term-tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .note-box {
+            background-color: #e8f4fd;
+            border-left: 4px solid #3b82f6;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+
+        .note-box strong {
+            color: #1e40af;
+        }
+
+        .example-dialog {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            overflow: hidden;
+        }
+
+        .example-dialog-header {
+            background-color: #f1f5f9;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            font-weight: 600;
+        }
+
+        .example-message {
+            padding: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .example-message:last-child {
+            border-bottom: none;
+        }
+
+        .message-human {
+            background-color: #f1f5f9;
+        }
+
+        .message-claude {
+            background-color: #ffffff;
+        }
+
+        .message-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-light);
+        }
+
+        .concept-visual {
+            background-color: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            text-align: center;
+        }
+
+        .concept-visual img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-bg"></div>
+        <div class="container header-content">
+            <h1>Claude 3.7 エンジニアリングガイド (初心者向け)</h1>
+            <p>AIと対話するだけでエンジニアリング業務や開発を進められる初心者向け総合ガイド</p>
+        </div>
+    </header>
+
+    <div class="nav-container">
+        <div class="container">
+            <nav>
+                <div class="nav-links">
+                    <a href="#intro" class="active">はじめに</a>
+                    <a href="#beginner">初心者ガイド</a>
+                    <a href="#general">基本活用法</a>
+                    <a href="#backend">バックエンド開発</a>
+                    <a href="#frontend">フロントエンド開発</a>
+                    <a href="#security">セキュリティ</a>
+                    <a href="#payment">決済システム</a>
+                    <a href="#sns">SNS開発</a>
+                    <a href="#business">事業活用</a>
+                </div>
+            </nav>
+        </div>
+    </div>
+
+    <main class="container">
+        <section id="intro">
+            <h2>はじめに</h2>
+            <p>このガイドは、プログラミングやエンジニアリングの初心者でもClaude 3.7との対話だけで様々な開発や事業を進められるように作られています。専門用語には説明を付け、複雑な概念は図解で示しているので、安心して読み進めてください。</p>
+
+            <div class="note-box">
+                <strong>このガイドの使い方：</strong> 各セクションには「プロンプト例」が含まれています。これらはClaude 3.7に入力するためのテキストで、「コピー」ボタンを押してそのままClaude 3.7に貼り付けて使うことができます。プロンプトの前後には使い方の説明も記載していますので、参考にしてください。
+            </div>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📝</div>
+                    <h3>コード生成</h3>
+                    <p>理想のプログラムやウェブサイトを説明するだけで、必要なコードを自動生成</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <h3>コードレビュー</h3>
+                    <p>書いたコードの問題点や改善点を見つけ、より良いコードにするアドバイスをもらえる</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>設計支援</h3>
+                    <p>アイデアをどうやってプログラムにするか、全体の設計や構造を提案してもらえる</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3>セキュリティ強化</h3>
+                    <p>プログラムの安全性を高め、悪意ある攻撃から守るための対策を教えてもらえる</p>
+                </div>
+            </div>
+
+            <h3>Claude 3.7とは？</h3>
+            <p>Claude 3.7は、人間の指示に応じて自然な会話やコード作成ができる高性能なAIアシスタントです。プログラミングの知識がなくても、やりたいことを自然な言葉で説明するだけで、専門的なアドバイスやコードの生成が可能です。</p>
+            
+            <div class="concept-visual">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400">
+                    <!-- 背景 -->
+                    <rect width="800" height="400" fill="#f9fafb" rx="10" ry="10" />
+                    
+                    <!-- 人間 -->
+                    <circle cx="200" cy="150" r="60" fill="#FFD580" />
+                    <text x="200" y="155" font-family="Arial" font-size="20" text-anchor="middle" fill="#333">あなた</text>
+                    
+                    <!-- Claude 3.7 -->
+                    <circle cx="600" cy="150" r="60" fill="#9d85f2" />
+                    <text x="600" y="155" font-family="Arial" font-size="20" text-anchor="middle" fill="#fff">Claude 3.7</text>
+                    
+                    <!-- 矢印 -->
+                    <path d="M270 130 L530 130" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead)" />
+                    <text x="400" y="110" font-family="Arial" font-size="16" text-anchor="middle" fill="#333">「ログイン機能を作りたい」</text>
+                    
+                    <path d="M530 170 L270 170" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead)" />
+                    <text x="400" y="200" font-family="Arial" font-size="16" text-anchor="middle" fill="#333">コード生成＋説明</text>
+                    
+                    <!-- 矢印の先端 -->
+                    <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+                        </marker>
+                    </defs>
+                    
+                    <!-- 成果物 -->
+                    <rect x="300" y="250" width="200" height="100" rx="5" ry="5" fill="#fff" stroke="#333" stroke-width="1" />
+                    <text x="400" y="290" font-family="monospace" font-size="14" text-anchor="middle" fill="#333">完成したコード</text>
+                    <text x="400" y="320" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">ログイン機能</text>
+                </svg>
+                <p><strong>Claude 3.7との対話による開発の流れ</strong></p>
+            </div>
+
+        </section>
+
+        <section id="beginner">
+            <h2>初心者のためのスタートガイド</h2>
+            <p>まずは、エンジニアリングや開発に関する基本的な概念を理解しましょう。このセクションでは、専門用語や開発の流れなど、初心者が躓きやすいポイントを解説します。</p>
+
+            <h3>基本的な用語解説</h3>
+            <div class="card">
+                <div class="card-title">よく出てくる専門用語</div>
+                <ul>
+                    <li><span class="term-tooltip">フロントエンド<span class="tooltip-text">ユーザーが直接見たり操作したりする部分。ウェブサイトやアプリの見た目や操作性を担当。</span></span> - ウェブサイトやアプリの見た目や操作部分</li>
+                    
+                    <li><span class="term-tooltip">バックエンド<span class="tooltip-text">ユーザーからは見えない裏側の処理を担当する部分。データの保存や計算など、システムの中核機能を実行。</span></span> - ウェブサイトやアプリの裏側で動く処理部分</li>
+                    
+                    <li><span class="term-tooltip">API<span class="tooltip-text">Application Programming Interface（アプリケーション・プログラミング・インターフェース）の略。ソフトウェア同士が通信するための仕組み。</span></span> - プログラム同士が通信するための仕組み</li>
+                    
+                    <li><span class="term-tooltip">データベース<span class="tooltip-text">情報を整理して保存するための場所。ユーザー情報や商品情報など、アプリで使うデータを管理。</span></span> - 情報を保存・管理する場所</li>
+                    
+                    <li><span class="term-tooltip">認証・認可<span class="tooltip-text">認証：ユーザーが本人であることを確認すること（ログインなど）。認可：そのユーザーに特定の操作を許可するかどうかを決めること。</span></span> - ユーザー確認と権限管理の仕組み</li>
+                    
+                    <li><span class="term-tooltip">リポジトリ<span class="tooltip-text">プログラムのコードを保存・管理する場所。変更履歴を記録し、複数人での共同作業を可能にする。</span></span> - プログラムコードの保管・管理場所</li>
+                    
+                    <li><span class="term-tooltip">デプロイ<span class="tooltip-text">開発したプログラムをサーバーにアップロードし、実際に動く状態にすること。</span></span> - プログラムを実際に使える状態にすること</li>
+                </ul>
+            </div>
+
+            <h3>開発の基本的な流れ</h3>
+            
+            <div class="concept-visual">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 250" width="800" height="250">
+                    <!-- 背景 -->
+                    <rect width="800" height="250" fill="#f9fafb" rx="10" ry="10" />
+                    
+                    <!-- フローチャート -->
+                    <rect x="50" y="50" width="120" height="60" rx="10" ry="10" fill="#e6f7ff" stroke="#1890ff" stroke-width="2" />
+                    <text x="110" y="85" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">アイデア・企画</text>
+                    
+                    <rect x="220" y="50" width="120" height="60" rx="10" ry="10" fill="#e6f7ff" stroke="#1890ff" stroke-width="2" />
+                    <text x="280" y="85" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">設計</text>
+                    
+                    <rect x="390" y="50" width="120" height="60" rx="10" ry="10" fill="#e6f7ff" stroke="#1890ff" stroke-width="2" />
+                    <text x="450" y="85" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">開発・実装</text>
+                    
+                    <rect x="560" y="50" width="120" height="60" rx="10" ry="10" fill="#e6f7ff" stroke="#1890ff" stroke-width="2" />
+                    <text x="620" y="85" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">テスト</text>
+                    
+                    <rect x="390" y="160" width="120" height="60" rx="10" ry="10" fill="#e6f7ff" stroke="#1890ff" stroke-width="2" />
+                    <text x="450" y="195" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">リリース・運用</text>
+                    
+                    <!-- 矢印 -->
+                    <path d="M170 80 L220 80" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead2)" />
+                    <path d="M340 80 L390 80" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead2)" />
+                    <path d="M510 80 L560 80" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead2)" />
+                    <path d="M620 110 L620 140 L450 140 L450 160" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead2)" />
+                    <path d="M390 190 L320 190 L320 110 L220 110" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead2)" />
+                    
+                    <!-- 矢印の先端 -->
+                    <defs>
+                        <marker id="arrowhead2" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+                        </marker>
+                    </defs>
+                </svg>
+                <p><strong>ソフトウェア開発の一般的な流れ</strong>（フィードバックを受けて改善を繰り返す）</p>
+            </div>
+            
+            <p>この流れの各段階でClaude 3.7を活用できます：</p>
+            <ol>
+                <li><strong>アイデア・企画段階</strong>：アイデアの整理、類似サービスの調査、機能リストの作成</li>
+                <li><strong>設計段階</strong>：システム設計、データベース設計、画面設計の提案</li>
+                <li><strong>開発・実装段階</strong>：コード生成、問題解決、コードの説明</li>
+                <li><strong>テスト段階</strong>：テストケースの提案、バグ修正のアドバイス</li>
+                <li><strong>リリース・運用段階</strong>：ドキュメント作成、改善提案</li>
+            </ol>
+
+            <h3>初めての開発体験</h3>
+            <p>まずは簡単なプロジェクトから始めましょう。Claude 3.7との対話例を見ながら、実際の開発の流れをイメージしてみましょう。</p>
+            
+            <div class="example-dialog">
+                <div class="example-dialog-header">シンプルなToDoリストアプリ開発の対話例</div>
+                
+                <div class="example-message message-human">
+                    <div class="message-label">あなた</div>
+                    <p>初心者です。簡単なToDoリストのウェブアプリを作りたいです。追加、削除、完了のチェックができる基本的な機能があればいいです。どうやって作れますか？</p>
+                </div>
+                
+                <div class="example-message message-claude">
+                    <div class="message-label">Claude 3.7</div>
+                    <p>初めてのウェブアプリ開発、ToDoリストは最適な選択です！シンプルながら基本的なウェブ開発の要素が含まれています。HTML, CSS, JavaScriptの基本だけで作れる方法を説明します。</p>
+                    <p>【全体像】<br>
+                    1. HTMLで画面の構造を作る<br>
+                    2. CSSで見た目を整える<br>
+                    3. JavaScriptで機能を実装する</p>
+                    <p>【コード例】HTMLとCSSとJavaScriptを使った完全なコードを生成します...</p>
+                </div>
+                
+                <div class="example-message message-human">
+                    <div class="message-label">あなた</div>
+                    <p>ありがとう！コードの中にあるaddTodo関数がどのように動作しているのか、もう少し詳しく説明してもらえますか？</p>
+                </div>
+                
+                <div class="example-message message-claude">
+                    <div class="message-label">Claude 3.7</div>
+                    <p>addTodo関数の動作について詳しく説明します。この関数は新しいToDoアイテムを追加するための中心的な機能です。</p>
+                    <p>【addTodo関数の詳細解説】<br>
+                    1. ユーザーが入力したテキストを取得<br>
+                    2. 空でないか確認（空なら何もしない）<br>
+                    3. 新しいToDoアイテムのHTML要素を作成<br>
+                    4. 削除ボタンと完了チェックボックスを追加<br>
+                    5. リストに新しいアイテムを追加<br>
+                    6. 入力フィールドをクリア</p>
+                    <p>【コードの詳細解説】行ごとの動作を説明します...</p>
+                </div>
+            </div>
+            
+            <div class="prompt-instruction">
+                <strong>👉 試してみよう：</strong> このような簡単な会話から始めてみましょう。専門用語がわからなくても、「もっと簡単に説明して」「この部分がわかりません」など遠慮なく聞いてみてください。Claude 3.7はあなたのレベルに合わせて説明してくれます。
+            </div>
+        </section>
+
+        <section id="general">
+            <h2>基本活用法</h2>
+            <p>Claude 3.7をエンジニアリング業務で効果的に活用するための基本的なアプローチと具体的なプロンプト例を紹介します。</p>
+
+            <div class="card">
+                <div class="card-title">効果的なプロンプトの作り方</div>
+                <p>Claude 3.7に的確な回答をもらうために、以下のポイントを意識しましょう：</p>
+                <ul>
+                    <li><strong>具体的に伝える：</strong> 「ウェブサイトを作りたい」より「ペットショップのウェブサイトを作りたい。商品一覧、詳細ページ、カートが必要」のように具体的に</li>
+                    <li><strong>現在の状況を説明する：</strong> 「初心者です」「Reactを使っています」など、あなたの状況を伝える</li>
+                    <li><strong>目的を明確に：</strong> なぜそれが必要か、どんな問題を解決したいのかを伝える</li>
+                    <li><strong>制約条件があれば伝える：</strong> 「スマホでも見やすいデザイン」「データベースはMongoDBを使いたい」など</li>
+                    <li><strong>答えて欲しい形式を指定する：</strong> 「コード例を交えて説明して」「図解で説明して」など</li>
+                </ul>
+            </div>
+
+            <div class="concept-visual">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 350" width="800" height="350">
+                    <!-- 背景 -->
+                    <rect width="800" height="350" fill="#f9fafb" rx="10" ry="10" />
+                    
+                    <!-- 左側：良くないプロンプト -->
+                    <rect x="50" y="30" width="300" height="280" rx="10" ry="10" fill="#ffe6e6" stroke="#ff9999" stroke-width="2" />
+                    <text x="200" y="60" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">あまり良くないプロンプト</text>
+                    
+                    <rect x="80" y="80" width="240" height="200" rx="5" ry="5" fill="#fff" stroke="#ccc" stroke-width="1" />
+                    <text x="100" y="110" font-family="Arial" font-size="14" fill="#333">「ログイン機能を作りたい」</text>
+                    
+                    <text x="100" y="150" font-family="Arial" font-size="14" fill="#666">↓ 問題点</text>
+                    <text x="100" y="180" font-family="Arial" font-size="14" fill="#ff6666">・どんな言語/フレームワーク？</text>
+                    <text x="100" y="210" font-family="Arial" font-size="14" fill="#ff6666">・どんなアプリのため？</text>
+                    <text x="100" y="240" font-family="Arial" font-size="14" fill="#ff6666">・どんな機能が必要？</text>
+                    <text x="100" y="270" font-family="Arial" font-size="14" fill="#ff6666">・目的は？</text>
+                    
+                    <!-- 右側：良いプロンプト -->
+                    <rect x="450" y="30" width="300" height="280" rx="10" ry="10" fill="#e6ffec" stroke="#99ff99" stroke-width="2" />
+                    <text x="600" y="60" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">良いプロンプト</text>
+                    
+                    <rect x="480" y="80" width="240" height="200" rx="5" ry="5" fill="#fff" stroke="#ccc" stroke-width="1" />
+                    <text x="490" y="105" font-family="Arial" font-size="13" fill="#333" width="220">「React+NodeJSでECサイトの</text>
+                    <text x="490" y="125" font-family="Arial" font-size="13" fill="#333" width="220">ログイン機能を作りたいです。</text>
+                    <text x="490" y="145" font-family="Arial" font-size="13" fill="#333" width="220">メール認証付きで、Google連携も</text>
+                    <text x="490" y="165" font-family="Arial" font-size="13" fill="#333" width="220">できるようにしたいです。DBは</text>
+                    <text x="490" y="185" font-family="Arial" font-size="13" fill="#333" width="220">MongoDBを使います。簡単な</text>
+                    <text x="490" y="205" font-family="Arial" font-size="13" fill="#333" width="220">コード例とその説明をお願いします。</text>
+                    <text x="490" y="225" font-family="Arial" font-size="13" fill="#333" width="220">セキュリティにも配慮したい</text>
+                    <text x="490" y="245" font-family="Arial" font-size="13" fill="#333" width="220">です。初心者なのでわかりやすく</text>
+                    <text x="490" y="265" font-family="Arial" font-size="13" fill="#333" width="220">お願いします。」</text>
+                </svg>
+                <p><strong>効果的なプロンプトの作り方</strong></p>
+            </div>
+
+            <h3>コード生成のプロンプト例</h3>
+            <div class="prompt-instruction">
+                <strong>👉 使い方：</strong> 以下のプロンプトをコピーしてClaude 3.7に送ってみましょう。データ集計機能のコードを生成してくれます。「CSVファイル」などの専門用語がわからなくても、結果として何をしたいのかを伝えることが大切です。
+            </div>
+            <div class="prompt-example">
+<button class="copy-btn" onclick="copyToClipboard(this)">コピー</button>
+以下の要件に基づいたPythonコードを作成してください。初心者にもわかるように詳しく説明してください。
+
+【やりたいこと】
+- データファイル（CSV）から情報を読み込んで、集計する
+- 集計結果をグラフにする
+- 結果をファイルに保存する
+
+【詳細】
+- 例えば売上データや顧客データなど、表形式になっているデータを分析したい
+- 特定の列（例：商品カテゴリや地域）ごとの合計や平均を計算したい
+- 結果を棒グラフや円グラフで視覚化したい
+
+【お願い】
+- コードは段階的に説明してください
+- 各部分が何をしているのか、コメントや解説を入れてください
+- プログラミング初心者でもわかるように専門用語は極力避けるか、説明を加えてください
+</div>
+
+            <h3>バグ修正のプロンプト例</h3>
+            <div class="prompt-instruction">
+                <strong>👉 使い方：</strong> コードに問題があるときは、コードを貼り付けて「この問題を直してほしい」と伝えましょう。以下の例では、JavaScript（ウェブサイトを動かすためのプログラミング言語）のコードに含まれるバグ（不具合）を修正してもらう例です。
+            </div>
+            <div class="prompt-example">
+<button class="copy-btn" onclick="copyToClipboard(this)">コピー</button>
+以下のJavaScriptコードに問題があるようです。動作しないので、問題を見つけて修正してください。初心者にもわかるように説明をお願いします。
+
+```javascript
+function calculateTotal(items) {
+  let total = 0;
+  for (let i = 0; i < items.length; i++) {
+    total += items[i].price * items[i].quantity;
+  }
+  return total;
+}
+
+function applyDiscount(total, discountCode) {
+  if (discountCode === 'SAVE10') {
+    return total * 0.9;
+  } else if (discountCode === 'SAVE20') {
+    return total * 0.8;
+  }
+}
+
+const cart = [
+  { name: 'Product 1', price: 1000, quantity: 2 },
+  { name: 'Product 2', price: 500, quantity: 1 }
+];
+
+const finalPrice = applyDiscount(calculateTotal(cart), 'SAVE10');
+console.log(`最終価格: ${finalPrice}円`);
+```
+
+何が問題なのかわかりやすく説明してください。また、このコードは商品の合計金額を計算して、割引を適用するものだと思いますが、他にも改善できる点があれば教えてください。
+</div>
+
+            <h3>システム設計のプロンプト例</h3>
+            <div class="prompt-instruction">
+                <strong>👉 使い方：</strong> 何かシステムやアプリを作りたいときは、その全体像や構造をClaude 3.7に相談してみましょう。以下の例では、オンラインショップの設計案を提案してもらいます。「バックエンド」などの専門用語がわからなくても、「ネットショップを作りたい」という目的を伝えることが大切です。
+            </div>
+            <div class="prompt-example">
+<button class="copy-btn" onclick="copyToClipboard(this)">コピー</button>
+オンラインショップのウェブサイトを作りたいと考えています。初心者でも理解できる設計を提案してください。
+
+【必要な機能】
+- 商品を表示する（写真、説明、価格）
+- 商品を検索したりフィルターできる
+- 買い物かごに商品を追加できる
+- 会員登録・ログイン機能
+- 注文と支払いの処理
+
+【希望】
+- スマホでも見やすいデザイン
+- 将来的に商品数が増えても問題ないシステム
+- セキュリティ面にも配慮
+
+専門用語は極力避けるか、使う場合は補足説明をつけてください。また、図解があるとわかりやすいです。どのような技術やツールを使えば良いか、初心者向けの選択肢も教えてください。
+</div>
+
+            <div class="workflow-chart">
+                <h3>Claude 3.7を活用した効率的な開発ワークフロー</h3>
+                <div class="workflow-step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <div class="step-title">要件整理・設計フェーズ</div>
+                        <p>「これからこんなアプリを作りたい」と伝え、必要な機能リストや全体設計の提案をしてもらいましょう。わからない部分は質問して、理解を深めていきます。</p>
+                    </div>
+                </div>
+                <div class="workflow-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <div class="step-title">コーディングフェーズ</div>
+                        <p>「〇〇という機能のコードを書いてほしい」と依頼しましょう。コードだけでなく、その説明も一緒にもらえば理解が深まります。わからない部分は「この部分をもっと詳しく」と聞いてみましょう。</p>
+                    </div>
+                </div>
+                <div class="workflow-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <div class="step-title">テスト・デバッグフェーズ</div>
+                        <p>動かなかったり、エラーが出たりした場合は、「このコードを実行したらこんなエラーが出た」と伝えましょう。エラーメッセージも一緒に貼り付けるとより正確な回答が得られます。</p>
+                    </div>
+                </div>
+                <div class="workflow-step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <div class="step-title">ドキュメント作成フェーズ</div>
+                        <p>「このコードの使い方を説明書として作ってほしい」と依頼すれば、わかりやすいマニュアルや説明資料を作成してくれます。</p>
+                    </div>
+                </div>
+                <div class="workflow-step">
+                    <div class="step-number">5</div>
+                    <div class="step-content">
+                        <div class="step-title">レビュー・改善フェーズ</div>
+                        <p>「このコードを改善するにはどうしたらいい？」「もっと速く動かす方法は？」など、質問することで品質向上につながります。</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="note-box">
+                <strong>初心者向けアドバイス：</strong> わからないことがあれば、遠慮なく「これはどういう意味ですか？」「もっと簡単に説明してください」と質問しましょう。複雑な回答が返ってきたら「具体例で説明してください」と依頼するのも効果的です。
+            </div>
+        </section>
+
+        <section id="backend">
+            <h2>バックエンド開発</h2>
+            <p><span class="term-tooltip">バックエンド<span class="tooltip-text">ウェブサイトやアプリケーションの裏側で動く部分。データの保存や処理、ビジネスロジックの実行などを担当します。ユーザーには直接見えない部分です。</span></span>とは、ウェブサイトやアプリの裏側で動くプログラムのことです。データの保存や処理、ユーザー認証などを担当します。</p>
+
+            <div class="concept-visual">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 300" width="800" height="300">
+                    <!-- 背景 -->
+                    <rect width="800" height="300" fill="#f9fafb" rx="10" ry="10" />
+                    
+                    <!-- サーバー -->
+                    <rect x="450" y="50" width="200" height="200" rx="10" ry="10" fill="#e6f7ff" stroke="#1890ff" stroke-width="2" />
+                    <text x="550" y="35" font-family="Arial" font-size="16" text-anchor="middle" fill="#333">バックエンド（サーバー側）</text>
+                    
+                    <!-- データベース -->
+                    <rect x="700" y="100" width="60" height="100" rx="5" ry="5" fill="#f0f0f0" stroke="#666" stroke-width="2" />
+                    <rect x="700" y="120" width="60" height="10" fill="#ccc" />
+                    <rect x="700" y="140" width="60" height="10" fill="#ccc" />
+                    <rect x="700" y="160" width="60" height="10" fill="#ccc" />
+                    <text x="730" y="220" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">データベース</text>
+                    
+                    <!-- サーバー内部コンポーネント -->
+                    <rect x="470" y="80" width="160" height="40" rx="5" ry="5" fill="#fff" stroke="#ccc" stroke-width="1" />
+                    <text x="550" y="105" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">API（通信窓口）</text>
+                    
+                    <rect x="470" y="130" width="160" height="40" rx="5" ry="5" fill="#fff" stroke="#ccc" stroke-width="1" />
+                    <text x="550" y="155" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">ビジネスロジック</text>
+                    
+                    <rect x="470" y="180" width="160" height="40" rx="5" ry="5" fill="#fff" stroke="#ccc" stroke-width="1" />
+                    <text x="550" y="205" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">データアクセス層</text>
+                    
+                    <!-- クライアント -->
+                    <rect x="100" y="50" width="200" height="200" rx="10" ry="10" fill="#fff3e6" stroke="#fa8c16" stroke-width="2" />
+                    <text x="200" y="35" font-family="Arial" font-size="16" text-anchor="middle" fill="#333">フロントエンド（ブラウザ）</text>
+                    
+                    <rect x="130" y="80" width="140" height="100" rx="5" ry="5" fill="#fff" stroke="#ccc" stroke-width="1" />
+                    <rect x="140" y="90" width="120" height="15" fill="#e6e6e6" />
+                    <rect x="140" y="115" width="80" height="15" fill="#e6e6e6" />
+                    <rect x="140" y="140" width="100" height="15" fill="#e6e6e6" />
+                    <rect x="160" y="165" width="80" height="25" rx="12.5" ry="12.5" fill="#1890ff" />
+                    <text x="200" y="183" font-family="Arial" font-size="12" text-anchor="middle" fill="#fff">送信</text>
+                    
+                    <!-- 矢印 -->
+                    <path d="M300 130 L450 130" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead3)" />
+                    <text x="375" y="120" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">リクエスト</text>
+                    
+                    <path d="M450 170 L300 170" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead3)" />
+                    <text x="375" y="190" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">レスポンス</text>
+                    
+                    <path d="M630 150 L700 150" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead3)" />
+                    
+                    <!-- 矢印の先端 -->
+                    <defs>
+                        <marker id="arrowhead3" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+                        </marker>
+                    </defs>
+                </svg>
+                <p><strong>バックエンド開発の基本構造</strong></p>
+            </div>
+
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab(event, 'api-design')">API設計</div>
+                <div class="tab" onclick="switchTab(event, 'db-design')">データベース設計</div>
+                <div class="tab" onclick="switchTab(event, 'auth')">認証・認可</div>
+                <div class="tab" onclick="switchTab(event, 'performance')">パフォーマンス最適化</div>
+            </div>
+
+            <div id="api-design" class="tab-content active">
+                <h3>API設計プロンプト例</h3>
+                <div class="prompt-instruction">
+                    <strong>👉 使い方：</strong> <span class="term-tooltip">API<span class="tooltip-text">Application Programming Interface（アプリケーション・プログラミング・インターフェース）の略。プログラム同士が通信するための仕組みや規約のこと。</span></span>とは、アプリの各部分が通信するための「窓口」のようなものです。以下のプロンプトを使って、タスク管理アプリの通信部分を設計してもらいましょう。
+                </div>
+                <div class="prompt-example">
+<button class="copy-btn" onclick="copyToClipboard(this)">コピー</button>
+タスク管理アプリのAPIを設計したいです。プログラミング初心者なので、基本的なことから教えてください。
+
+【アプリの機能】
+- ユーザーがログインできる
+- タスクを作成・編集・削除できる
+- タスクにタグをつけたり期限を設定できる
+- タスクを完了としてマークできる
+
+【知りたいこと】
+- どのようなAPIエンドポイント（通信窓口）が必要か
+- 各エンドポイントでどのようなデータをやり取りするか
+- セキュリティについての基本的な考慮点
+
+専門用語はなるべく避けるか、使う場合は説明を加えてください。また、実際のコード例があるとわかりやすいです。
+</div>
+
+                <h3>Node.js Expressアプリケーション開発プロンプト例</h3>
+                <div class="prompt-instruction">
+                    <strong>👉 使い方：</strong> <span class="term-tooltip">Node.js<span class="tooltip-text">ブラウザの外でJavaScriptを実行するための環境。サーバーサイドのプログラミングにJavaScriptを使えるようにします。</span></span>と<span class="term-tooltip">Express<span class="tooltip-text">Node.js向けのウェブアプリケーションフレームワーク。ウェブサイトやAPIを簡単に作るための道具セット。</span></span>を使ったウェブアプリケーションを作成したい場合のプロンプト例です。
+                </div>
+                <div class="prompt-example">
+<button class="copy-btn" onclick="copyToClipboard(this)">コピー</button>
+Node.js + Expressで簡単なメモアプリを作りたいです。プログラミング初心者なので、基礎から丁寧に教えてください。
+
+【欲しい機能】
+- メモの作成、表示、編集、削除
+- ユーザー登録・ログイン機能（シンプルでOK）
+- メモを保存するためのデータベース連携
+
+【レベル】
+- プログラミングの基本は理解していますが、Node.jsやExpressは初めてです
+- フォルダ構成や各ファイルの役割から解説してほしいです
+- コピペで動くコード例と、その説明があると助かります
+
+【質問】
+- プロジェクトの始め方（必要なものをインストールする方法など）
+- 基本的なファイル構造の作り方
+- データベース連携の仕方（できるだけシンプルなもの）
+- 実行方法
+
+専門用語は極力避けるか、使う場合は初心者向けの説明を入れてください。
+</div>
+            </div>
+
+            <div id="db-design" class="tab-content">
+                <h3>データベース設計プロンプト例</h3>
+                <div class="prompt-instruction">
+                    <strong>👉 使い方：</strong> <span class="term-tooltip">データベース<span class="tooltip-text">データを整理して保存するための仕組み。表や関連性を使って、大量の情報を効率的に管理します。</span></span>は情報を保存する「倉庫」のようなものです。以下のプロンプトで、オンラインショップのデータベース設計を依頼できます。
+                </div>
+                <div class="prompt-example">
+<button class="copy-btn" onclick="copyToClipboard(this)">コピー</button>
+オンラインショップのデータベース設計を手伝ってください。初心者向けに基本から説明をお願いします。
+
+【ショップの概要】
+- 洋服や雑貨を販売するECサイト
+- ユーザー登録とログイン機能がある
+- 商品をカテゴリーで分類している
+- 買い物かごと注文履歴機能がある
+- ユーザーはレビューを投稿できる
+
+【知りたいこと】
+- どのような情報をデータベースに保存すべきか
+- テーブル（データを保存する表）の構成
+- それぞれのテーブルの関連性
+- 初心者でも理解しやすいデータベース設計
+
+専門用語はできるだけ避け、使う場合は説明を加えてください。図解があるとわかりやすいです。特に、テーブル間の関係をどう設計するかを教えてください。
+</div>
+
+                <h3>NoSQLデータベース活用プロンプト例</h3>
+                <div class="prompt-instruction">
+                    <strong>👉 使い方：</strong> <span class="term-tooltip">NoSQL<span class="tooltip-text">従来のリレーショナルデータベース（SQL）とは異なるアプローチでデータを保存する方式。表や関係性に縛られず、柔軟にデータを扱えます。</span></span>は従来の表形式のデータベースとは異なる方式のデータベースです。以下のプロンプトでSNSアプリのデータモデルを設計してもらいましょう。
+                </div>
+                <div class="prompt-example">
+<button class="copy-btn" onclick="copyToClipboard(this)">コピー</button>
+MongoDBを使ってSNSアプリのデータモデルを設計したいです。初心者にもわかりやすく説明してください。
+
+【アプリの機能】
+- ユーザープロフィール（名前、プロフィール画像、自己紹介など）
+- 投稿機能（テキスト、画像、位置情報）
+- いいね・コメント機能
+- フォロー/フォロワー関係
+- タイムライン表示
+
+【質問】
+- どのようなデータ構造が良いでしょうか
+- ユーザー、投稿、コメントなどのデータをどう関連付けるべきか
+- MongoDBではデータをどのように保存するのか基本から教えてください
+- 効率的なデータ取得のための設計方法
+
+専門用語はなるべく避け、使う場合は補足説明をつけてください。また、実際のJSONデータの例があるとわかりやすいです。
+</div>
+            </div>
+
+            <div id="auth" class="tab-content">
+                <h3>認証システム実装プロンプト例</h3>
+                <div class="prompt-instruction">
+                    <strong>👉 使い方：</strong> <span class="term-tooltip">認証<span class="tooltip-text">ユーザーが本人であることを確認する仕組み。ユーザー名とパスワードでのログインなどがこれにあたります。</span></span>はユーザーが本人であることを確認する仕組みです。以下のプロンプトでログイン機能を実装してもらいましょう。
+                </div>
+                <div class="prompt-example">
+<button class="copy-btn" onclick="copyToClipboard(this)">コピー</button>
+ウェブサイトにシンプルなログイン機能を追加したいです。初心者でもわかるように基本から説明してください。
+
+【必要な機能】
+- ユーザー登録（メールアドレスとパスワード）
+- ログイン/ログアウト
+- パスワードを忘れた場合のリセット機能
+
+【希望】
+- なるべくシンプルな実装方法
+- セキュリティの基本的な考慮点
+- 実際に動く具体的なコード例
+
+【質問】
+- 一般的なログイン機能の仕組みはどうなっているのか
+- パスワードはどのように安全に保存するのか
+- ログイン状態をどのように維持するのか
+- フロントエンド（画面）とバックエンド（サーバー）でどのように連携するのか
+
+専門用語は使用する場合は補足説明をつけてください。また、実装手順をステップバイステップで解説していただけると助かります。
+</div>
+
+                <h3>多要素認証（MFA）実装プロンプト例</h3>
+                <div class="prompt-instruction">
+                    <strong>👉 使い方：</strong> <span class="term-tooltip">多要素認証（MFA）<span class="tooltip-text">パスワードだけでなく、スマートフォンなどの別の要素も使って、より安全に本人確認を行う仕組み。</span></span>はパスワードだけでなく別の方法も組み合わせた安全性の高いログイン方法です。
+                </div>
+                <div class="prompt-example">
+<button class="copy-btn" onclick="copyToClipboard(this)">コピー</button>
+ウェブサイトに多要素認証（MFA）を追加したいと考えています。初心者にもわかるように説明してください。
+
+【知りたいこと】
+- 多要素認証とは何か、基本的な仕組み
+- どのような種類の多要素認証があるのか（SMSコード、アプリ認証など）
+- 実装の簡単な方法は？
+- ユーザー体験を損なわないような導入方法
+
+【具体的に欲しい内容】
+- 多要素認証の基本的な説明（図解があるとわかりやすいです）
+- 導入しやすい多要素認証の方法と必要なツール
+- 簡単な実装例（できればコード付き）
+- 実装する際の注意点
+
+専門用語はなるべく避け、使う場合は説明を加えてください。セキュリティ対策として必要性は理解していますが、技術的な詳細は初心者レベルからの説明が必要です。
+</div>
+            </div>
+
+            <div id="performance" class="tab-content">
+                <h3>APIパフォーマンス最適化プロンプト例</h3>
+                <div class="prompt-instruction">
+                    <strong>👉 使い方：</strong> アプリの動作が遅い場合など、<span class="term-tooltip">パフォーマンス最適化<span class="tooltip-text">プログラムの実行速度や効率を改善すること。ユーザー体験を向上させ、リソース（メモリやCPU）の使用を抑えます。</span></span>のアドバイスが欲しい場合のプロンプト例です。
+                </div>
+                <div class="prompt-example">
+<button class="copy-btn" onclick="copyToClipboard(this)">コピー</button>
+以下のNode.jsコードが遅く動作しています。パフォーマンスを改善する方法を初心者にもわかりやすく教えてください。
+
+```javascript
+const express = require('express');
+const app = express();
+
+// 商品一覧を取得するAPI
+app.get('/api/products', async (req, res) => {
+  try {
+    // データベースから全商品を取得
+    const products = await getAllProducts();
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ message: 'エラーが発生しました' });
+  }
+});
+
+// ユーザーの購入履歴を取得するAPI
+app.get('/api/users/:id/purchases', async (req, res) => {
+  try {
+    const userId = req.params.id;
+    // ユーザー情報を取得
+    const user = await getUserById(userId);
+    
+    // ユーザーの購入履歴IDリスト
+    const purchaseIds = user.purchases || [];
+    const purchases = [];
+    
+    // 各購入IDに対して商品情報を取得
+    for (let i = 0; i < purchaseIds.length; i++) {
+      const product = await getProductById(purchaseIds[i]);
+      if (product) {
+        purchases.push(product);
+      }
+    }
+    
+    res.json(purchases);
+  } catch (err) {
+    res.status(500).json({ message: 'エラーが発生しました' });
+  }
+});
+
+app.listen(3000, () => console.log('サーバー起動: ポート3000'));
+```
+
+特に以下の点について教えてください：
+1. このコードのどこに問題があるのか
+2. 初心者でもできる簡単な改善方法
+3. 改善されたコード例
+4. パフォーマンス改善の基本的な考え方
+
+専門用語は使う場合は説明を付けてください。実際にこのコードを改善するとどのくらい速くなるのかも教えてください。
+</div>
+
+                <h3>大規模システム設計プロンプト例</h3>
+                <div class="prompt-instruction">
+                    <strong>👉 使い方：</strong> たくさんのユーザーが利用する大規模なシステムを設計したい場合のプロンプト例です。
+                </div>
+                <div class="prompt-example">
+<button class="copy-btn" onclick="copyToClipboard(this)">コピー</button>
+多くのユーザーが利用するチャットアプリの設計方法を教えてください。初心者でもわかるように説明をお願いします。
+
+【アプリの要件】
+- リアルタイムでメッセージをやりとりできる
+- 個人チャットとグループチャットがある
+- 画像や動画も送れる
+- オンライン/オフライン状態がわかる
+- 既読機能がある
+
+【知りたいこと】
+- こうしたアプリは基本的にどのような仕組みで動いているのか
+- 多くのユーザーがいても遅くならない設計方法
+- サーバーの負荷を減らす工夫
+- 具体的な技術スタック（使うべき技術）
+
+専門用語は極力避け、使う場合は補足説明をつけてください。全体の構造を図解してもらえると特に理解しやすいです。SNSアプリを作りたいと考えていますが、技術的な知識はまだ浅いので、基本的なことから教えてください。
+</div>
+            </div>
+        </section>
+
+        <section id="frontend">
+            <h2>フロントエンド開発</h2>
+            <p><span class="term-tooltip">フロントエンド<span class="tooltip-text">ウェブサイトやアプリケーションのユーザーが直接触れる部分。見た目やインターフェース、操作性などを担当します。</span></span>とは、ウェブサイトやアプリでユーザーが直接見たり触れたりする部分です。画面のデザインやボタンの動きなどを担当します。</p>
+
+            <div class="concept-visual">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 350" width="800" height="350">
+                    <!-- 背景 -->
+                    <rect width="800" height="350" fill="#f9fafb" rx="10" ry="10" />
+                    
+                    <!-- ブラウザ画面 -->
+                    <rect x="150" y="30" width="500" height="300" rx="10" ry="10" fill="#fff" stroke="#ccc" stroke-width="2" />
+                    <rect x="150" y="30" width="500" height="30" rx="10" ry="10" fill="#f2f2f2" stroke="#ccc" stroke-width="2" />
+                    <circle cx="170" cy="45" r="5" fill="#ff6b6b" />
+                    <circle cx="190" cy="45" r="5" fill="#feca57" />
+                    <circle cx="210" cy="45" r="5" fill="#1dd1a1" />
+                    
+                    <!-- コンポーネント -->
+                    <rect x="170" y="80" width="460" height="50" rx="5" ry="5" fill="#e6f7ff" stroke="#1890ff" stroke-width="1" />
+                    <text x="190" y="110" font-family="Arial" font-size="14" fill="#333">ヘッダー（ロゴ・ナビゲーションメニュー）</text>
+                    <text x="600" y="70" font-family="Arial" font-size="12" fill="#1890ff">コンポーネント</text>
+                    
+                    <rect x="170" y="150" width="300" height="120" rx="5" ry="5" fill="#e6fffb" stroke="#13c2c2" stroke-width="1" />
+                    <text x="190" y="180" font-family="Arial" font-size="14" fill="#333">メインコンテンツ</text>
+                    <text x="450" y="140" font-family="Arial" font-size="12" fill="#13c2c2">コンポーネント</text>
+                    
+                    <rect x="490" y="150" width="140" height="120" rx="5" ry="5" fill="#fff0f6" stroke="#eb2f96" stroke-width="1" />
+                    <text x="510" y="180" font-family="Arial" font-size="14" fill="#333">サイドバー</text>
+                    <text x="610" y="140" font-family="Arial" font-size="12" fill="#eb2f96">コンポーネント</text>
+                    
+                    <rect x="170" y="290" width="460" height="30" rx="5" ry="5" fill="#f9f0ff" stroke="#722ed1" stroke-width="1" />
+                    <text x="190" y="310" font-family="Arial" font-size="14" fill="#333">フッター</text>
+                    <text x="600" y="280" font-family="Arial" font-size="12" fill="#722ed1">コンポーネント</text>
+                    
+                    <!-- 技術スタック -->
+                    <rect x="20" y="100" width="100" height="30" rx="15" ry="15" fill="#f0f5ff" stroke="#2f54eb" stroke-width="1" />
+                    <text x="70" y="120" font-family="Arial" font-size="14" text-anchor="middle" fill="#2f54eb">HTML</text>
+                    
+                    <rect x="20" y="150" width="100" height="30" rx="15" ry="15" fill="#fcffe6" stroke="#a0d911" stroke-width="1" />
+                    <text x="70" y="170" font-family="Arial" font-size="14" text-anchor="middle" fill="#a0d911">CSS</text>
+                    
+                    <rect x="20" y="200" width="100" height="30" rx="15" ry="15" fill="#fff7e6" stroke="#fa8c16" stroke-width="1" />
+                    <text x="70" y="220" font-family="Arial" font-size="14" text-anchor="middle" fill="#fa8c16">JavaScript</text>
+                    
+                    <rect x="20" y="250" width="100" height="30" rx="15" ry="15" fill="#e6f7ff" stroke="#1890ff" stroke-width="1" />
+                    <text x="70" y="270" font-family="Arial" font-size="14" text-anchor="middle" fill="#1890ff">React/Vue</text>
+                    
+                    <text x="70" y="70" font-family="Arial" font-size="14" text-anchor="middle" font-weight="bold" fill="#333">使用技術</text>
+                    
+                    <!-- フロントエンドラベル -->
+                    <text x="400" y="20" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold" fill="#333">フロントエンド開発（ユーザーが見る画面部分）</text>
+                </svg>
+                <p><strong>フロントエンド開発の基本構造</strong></p>
+            </div>
+
+            <h3>React/Vueコンポーネント設計プロンプト例</h3>
+            <div class="prompt-instruction">
+                <strong>👉 使い方：</strong> <span class="term-tooltip">React/Vue<span class="tooltip-text">JavaScriptのフレームワーク（開発補助ツール）で、効率的なWebアプリ開発を可能にします。画面の部品を再利用可能なコンポーネントとして構築できます。</span></span>はWebアプリを効率的に開発するための人気ツールです。以下のプロンプトで管理画面の設計を依頼できます。
+            </div>
+            <div class="prompt-example">
+<button class="copy-btn" onclick="copyToClipboard(this)">コピー</button>
+Reactを使った管理画面（ダッシュボード）を設計したいです。初心者にもわかるように説明してください。
+
+【必要な機能】
+- ログインページ
+- メインダッシュボード（概要情報・グラフ表示）
+- ユーザー管理画面（一覧・詳細・編集）
+- 商品管理画面（一覧・詳細・編集）
+- 設定画面
+- スマホでも見やすいレスポンシブデザイン
+
+【知りたいこと】
+- 画面構成はどうすれば良いか
+- 各画面をどのように作るか（コードの基本的な書き方）
+- 画面間の遷移（移動）をどう実装するか
+- データの取得・表示方法
+- デザインの基本的な考え方
+
+Reactの基本概念からわかりやすく説明してください。専門用語は避けるか、使う場合は説明を加えてください。実際のコード例があると特に助かります。
+</div>
+
+            <h3>ウェブデザイン実装プロンプト例</h3>
+            <div class="prompt-instruction">
+                <strong>👉 使い方：</strong> ウェブサイトのデザインを実装したい場合のプロンプト例です。<span class="term-tooltip">Tailwind CSS<span class="tooltip-text">CSSフレームワークの一種で、すぐに使えるスタイルクラスを提供します。HTMLに直接クラスを追加するだけでデザインを適用できる便利なツールです。</span></span>というツールを使った例です。
+            </div>
+            <div class="prompt-example">
+<button class="copy-btn" onclick="copyToClipboard(this)">コピー</button>
+オンラインショップの商品詳細ページを作りたいです。HTML、CSS初心者でもわかるように説明をお願いします。
+
+【ページに必要な要素】
+- 商品画像（複数枚を切り替え表示できると良い）
+- 商品名、価格、説明文
+- サイズ・色などの選択オプション
+- 「カートに追加」ボタン
+- レビュー表示エリア
+- 関連商品表示エリア
+
+【デザインの希望】
+- モダンでシンプルなデザイン
+- スマホでも見やすいレスポンシブ対応
+- アニメーションなど動きがあるとなお良い
+
+Tailwind CSSを使った実装方法を教えてください。Tailwind CSSが初めてなので、基本的な使い方から説明していただけると助かります。実際のコード例と、各部分の説明をお願いします。
+</div>
+
+            <h3>フロントエンドパフォーマンス最適化プロンプト例</h3>
+            <div class="prompt-instruction">
+                <strong>👉 使い方：</strong> ウェブサイトの表示が遅い場合など、フロントエンドのパフォーマンスを改善したい場合のプロンプト例です。
+            </div>
+            <div class="prompt-example">
+<button class="copy-btn" onclick="copyToClipboard(this)">コピー</button>
+Reactで作ったウェブサイトの表示が遅いです。パフォーマンスを改善する方法を初心者にもわかりやすく教えてください。
+
+```jsx
+import React, { useState, useEffect } from 'react';
+
+const ProductPage = () => {
+  const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // データを取得する関数
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      // 商品データを取得
+      const productsData = await fetchProducts();
+      setProducts(productsData);
+      setFilteredProducts(productsData);
+      
+      // カテゴリーデータを取得
+      const categoriesData = await fetchCategories();
+      setCategories(categoriesData);
+      
+      setIsLoading(false);
+    };
+    
+    fetchData();
+  }, []);
+
+  // カテゴリーが選択されたときに商品をフィルタリング
+  useEffect(() => {
+    if (selectedCategory) {
+      const filtered = products.filter(product => 
+        product.categoryId === selectedCategory.id
+      );
+      setFilteredProducts(filtered);
+    } else {
+      setFilteredProducts(products);
+    }
+  }, [selectedCategory, products]);
+
+  // カテゴリーが変更されたときの処理
+  const handleCategoryChange = (category) => {
+    setSelectedCategory(category);
+  };
+
+  // 商品一覧を表示する関数
+  const renderProducts = () => {
+    return filteredProducts.map(product => (
+      <div key={product.id} className="product-card">
+        <img src={product.image} alt={product.name} />
+        <h3>{product.name}</h3>
+        <p>{product.price}円</p>
+        <button>カートに追加</button>
+      </div>
+    ));
+  };
+
+  if (isLoading) {
+    return <div>読み込み中...</div>;
+  }
+
+  return (
+    <div className="product-page">
+      <div className="sidebar">
+        <h2>カテゴリー</h2>
+        <ul>
+          {categories.map(category => (
+            <li 
+              key={category.id}
+              onClick={() => handleCategoryChange(category)}
+              className={selectedCategory && selectedCategory.id === category.id ? 'active' : ''}
+            >
+              {category.name}
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div className="product-grid">
+        {renderProducts()}
+      </div>
+    </div>
+  );
+};
+
+export default ProductPage;
+```
+
+特に以下の点について教えてください：
+1. このコードのどこに問題がありそうか
+2. 初心者でもできる簡単な改善方法
+3. 改善したコード例
+4. Reactの一般的なパフォーマンス改善のコツ
+
+専門用語は使う場合は補足説明をつけてください。このコードを改善するとどのような効果が期待できるのかも教えていただけると助かります。
+</div>
+        </section>
+
+        <section id="security">
+            <h2>セキュリティ対策</h2>
+            <p><span class="term-tooltip">セキュリティ<span class="tooltip-text">システムやデータを不正アクセスや攻撃から守るための対策。ユーザー情報や重要データを安全に保つために必須です。</span></span>とは、ウェブサイトやアプリを不正アクセスや攻撃から守るための対策です。初心者でも実装できる基本的なセキュリティ対策を見ていきましょう。</p>
+
+            <div class="concept-visual">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 300" width="800" height="300">
+                    <!-- 背景 -->
+                    <rect width="800" height="300" fill="#f9fafb" rx="10" ry="10" />
+                    
+                    <!-- ウェブアプリケーション -->
+                    <rect x="250" y="50" width="300" height="200" rx="10" ry="10" fill="#f5f5f5" stroke="#666" stroke-width="2" />
+                    <text x="400" y="35" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold" fill="#333">ウェブアプリケーション</text>
+                    
+                    <!-- セキュリティレイヤー -->
+                    <rect x="250" y="50" width="300" height="40" rx="10" ry="10" fill="#e6f7ff" stroke="#1890ff" stroke-width="2" />
+                    <text x="400" y="75" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">HTTPS（通信の暗号化）</text>
+                    
+                    <rect x="250" y="100" width="300" height="40" rx="0" ry="0" fill="#fff3e6" stroke="#fa8c16" stroke-width="2" />
+                    <text x="400" y="125" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">認証・認可（誰が何にアクセスできるか）</text>
+                    
+                    <rect x="250" y="150" width="300" height="40" rx="0" ry="0" fill="#e6fffb" stroke="#13c2c2" stroke-width="2" />
+                    <text x="400" y="175" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">入力検証（悪意ある入力を防ぐ）</text>
+                    
+                    <rect x="250" y="200" width="300" height="40" rx="0" ry="0" fill="#fff0f6" stroke="#eb2f96" stroke-width="2" />
+                    <text x="400" y="225" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">データ保護（情報の安全な保存）</text>
+                    
+                    <!-- 攻撃者 -->
+                    <circle cx="100" cy="150" r="30" fill="#ff4d4f" opacity="0.8" />
+                    <text x="100" y="155" font-family="Arial" font-size="14" text-anchor="middle" fill="#fff">攻撃者</text>
+                    
+                    <!-- 攻撃 -->
+                    <path d="M130 135 L250 75" stroke="#ff4d4f" stroke-width="2" stroke-dasharray="5,5" />
+                    <text x="170" y="85" font-family="Arial" font-size="12" fill="#ff4d4f">盗聴攻撃</text>
+                    
+                    <path d="M130 150 L250 125" stroke="#ff4d4f" stroke-width="2" stroke-dasharray="5,5" />
+                    <text x="170" y="135" font-family="Arial" font-size="12" fill="#ff4d4f">不正ログイン</text>
+                    
+                    <path d="M130 165 L250 175" stroke="#ff4d4f" stroke-width="2" stroke-dasharray="5,5" />
+                    <text x="170" y="185" font-family="Arial" font-size="12" fill="#ff4d4f">SQLインジェクション</text>
+                    
+                    <path d="M130 180 L250 225" stroke="#ff4d4f" stroke-width="2" stroke-dasharray="5,5" />
+                    <text x="170" y="235" font-family="Arial" font-size="12" fill="#ff4d4f">データ窃取</text>
+                    
+                    <!-- ユーザー -->
+                    <circle cx="700" cy="150" r="30" fill="#52c41a" opacity="0.8" />
+                    <text x="700" y="155" font-family="Arial" font-size="14" text-anchor="middle" fill="#fff">ユーザー</text>
+                    
+                    <!-- 安全な接続 -->
+                    <path d="M550 150 L670 150" stroke="#52c41a" stroke-width="2" />
+                    <text x="610" y="140" font-family="Arial" font-size="12" fill="#52c41a">安全な接続</text>
+                </svg>
+                <p><strong>ウェブアプリケーションのセキュリティ対策の基本</strong></p>
+            </div>
+
+            <h3>セキュリティ脆弱性診断プロンプト例</h3>
+            <div class="prompt-instruction">
+                <strong>👉 使い方：</strong> <span class="term-tooltip">セキュリティ脆弱性<span class="tooltip-text">システムの弱点や欠陥で、攻撃者に悪用される可能性のある部分。適切に対処しないとデータ漏洩などの被害につながります。</span></span>とは、プログラムの弱点や穴のことです。以下のプロンプトで、コードの安全性をチェックしてもらいましょう。</div>
+            <div class="prompt-example">
+<button class="copy-btn" onclick="copyToClipboard(this)">コピー</button>
+以下のプログラムコードのセキュリティ上の問題点を教えてください。初心者にもわかりやすく説明してください。
+
+```javascript
+const express = require('express');
+const mysql = require('mysql');
+const app = express();
+app.use(express.urlencoded({ extended: true }));
+
+// データベース接続
+const db = mysql.createConnection({
+  host: 'localhost',
+  user: 'root',
+  password: 'password',
+  database: 'myapp'
+});
+
+// ユーザーログイン
+app.post('/login', (req, res) => {
+  const username = req.body.username;
+  const password = req.body.password;
+  
+  const query = `SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`;
+  
+  db.query(query, (err, results) => {
+    if (results.length > 0) {
+      res.send('ログイン成功！');
+    } else {
+      res.send('ユーザー名またはパスワードが間違っています');
+    }
+  });
+});
+
+// ユーザー情報取得
+app.get('/api/users', (req, res) => {
+  const userId = req.query.id;
+  const query = `SELECT * FROM users WHERE id = ${userId}`;
+  
+  db.query(query, (err, results) => {
+    res.json(results[0]);
+  });
+});
+
+app.listen(3000, () => {
+  console.log('サーバーが起動しました');
+});
+```
+
+特に以下の点について教えてください：
+1. このコードにはどのようなセキュリティ上の問題があるか
+2. それぞれの問題点が悪用されるとどのようなリスクがあるのか
+3. 問題を修正するためにはどうすれば良いか
+4. 初心者でもできる基本的なセキュリティ対策
+
+専門用語は使う場合は説明を付けてください。実際に安全なコードの例も示していただけると助かります。
+</div>
+
+                <h3>安全なログイン機能実装プロンプト例</h3>
+                <div class="prompt-instruction">
+                    <strong>👉 使い方：</strong> ユーザー認証（ログイン機能）を安全に実装するためのプロンプト例です。<span class="term-tooltip">OAuth<span class="tooltip-text">大手サービス（Google, Facebookなど）のアカウントを使ってログインできる仕組み。パスワードを別途覚える必要がなく、安全性も高い認証方式です。</span></span>という、Googleなどのアカウントでログインする方式についても学べます。
+                </div>
+                <div class="prompt-example">
+<button class="copy-btn" onclick="copyToClipboard(this)">コピー</button>
+安全なログイン・認証システムの作り方を教えてください。初心者にもわかりやすく説明をお願いします。
+
+【必要な機能】
+- ユーザー登録（メールアドレスとパスワード）
+- ログイン機能
+- パスワードリセット機能
+- ソーシャルログイン（GoogleやFacebookのアカウントでログインできる機能）
+
+【知りたいこと】
+- パスワードの安全な保存方法
+- ログイン状態の管理方法
+- 不正アクセスを防ぐための基本的な対策
+- ソーシャルログイン（OAuth）の基本的な仕組みと実装方法
+
+【レベル】
+- プログラミングの基本は理解していますが、セキュリティについては初心者です
+- なるべく簡単な実装方法から教えてください
+- 段階的に安全性を高める方法も知りたいです
+
+専門用語は避けるか、使う場合は補足説明をつけてください。図解や具体的なコード例があるとわかりやすいです。
+</div>
+
+                <h3>個人情報保護対策プロンプト例</h3>
+                <div class="prompt-instruction">
+                    <strong>👉 使い方：</strong> <span class="term-tooltip">個人情報保護<span class="tooltip-text">ユーザーの個人情報を適切に管理し、漏洩や不正利用から守るための対策。法律や規制に従った対応が必要です。</span></span>に関する対策を学ぶためのプロンプト例です。ウェブサイトやアプリでユーザーの情報を安全に扱うための方法を教えてもらいましょう。
+                </div>
+                <div class="prompt-example">
+<button class="copy-btn" onclick="copyToClipboard(this)">コピー</button>
+ウェブサイトやアプリで個人情報を安全に扱うための基本的な対策を教えてください。初心者にもわかりやすく説明をお願いします。
+
+【扱う個人情報】
+- ユーザー名、メールアドレス
+- パスワード
+- 氏名、住所、電話番号
+- クレジットカード情報（決済機能がある場合）
+
+【知りたいこと】
+- 個人情報を安全に保存する方法
+- 個人情報の表示・利用に関する注意点
+- プライバシーポリシーに必要な内容
+- 法律や規制への対応の基本
+- データ漏洩が起きた場合の対応
+
+【レベル】
+- 小規模なウェブサービスを作ろうとしている初心者です
+- 技術的な部分と法律的な部分の両方を知りたいです
+- 難しすぎない基本的な対策から始めたいです
+
+専門用語はなるべく避け、使う場合は説明を加えてください。実際の実装例やチェックリストがあるとわかりやすいです。
+</div>
+        </section>
+
+        <section id="payment">
+            <h2>決済システム開発</h2>
+            <p><span class="term-tooltip">決済システム<span class="tooltip-text">商品やサービスの支払いを処理するためのシステム。クレジットカード決済、銀行振込、電子マネーなど様々な支払い方法を扱います。</span></span>とは、オンラインでの支払いを処理するシステムです。ネットショップなどで必要になる機能です。</p>
+
+            <div class="concept-visual">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 300" width="800" height="300">
+                    <!-- 背景 -->
+                    <rect width="800" height="300" fill="#f9fafb" rx="10" ry="10" />
+                    
+                    <!-- 決済フロー -->
+                    <rect x="50" y="50" width="120" height="60" rx="10" ry="10" fill="#e6f7ff" stroke="#1890ff" stroke-width="2" />
+                    <text x="110" y="85" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">ショッピングカート</text>
+                    
+                    <rect x="220" y="50" width="120" height="60" rx="10" ry="10" fill="#e6f7ff" stroke="#1890ff" stroke-width="2" />
+                    <text x="280" y="85" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">注文情報入力</text>
+                    
+                    <rect x="390" y="50" width="120" height="60" rx="10" ry="10" fill="#e6f7ff" stroke="#1890ff" stroke-width="2" />
+                    <text x="450" y="75" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">決済情報入力</text>
+                    <text x="450" y="95" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">カード情報など</text>
+                    
+                    <rect x="560" y="50" width="120" height="60" rx="10" ry="10" fill="#e6f7ff" stroke="#1890ff" stroke-width="2" />
+                    <text x="620" y="75" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">決済処理</text>
+                    <text x="620" y="95" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">認証・承認</text>
+                    
+                    <!-- 下部のシステム構成 -->
+                    <rect x="100" y="170" width="150" height="80" rx="10" ry="10" fill="#fff0f6" stroke="#eb2f96" stroke-width="2" />
+                    <text x="175" y="205" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">ショップシステム</text>
+                    <text x="175" y="225" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">自社で開発・運用</text>
+                    
+                    <rect x="320" y="170" width="150" height="80" rx="10" ry="10" fill="#f9f0ff" stroke="#722ed1" stroke-width="2" />
+                    <text x="395" y="205" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">決済代行サービス</text>
+                    <text x="395" y="225" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">Stripe, PayPalなど</text>
+                    
+                    <rect x="540" y="170" width="150" height="80" rx="10" ry="10" fill="#e6fffb" stroke="#13c2c2" stroke-width="2" />
+                    <text x="615" y="205" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">カード会社・銀行</text>
+                    <text x="615" y="225" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">決済の最終処理</text>
+                    
+                    <!-- 矢印 -->
+                    <path d="M170 80 L220 80" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead4)" />
+                    <path d="M340 80 L390 80" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead4)" />
+                    <path d="M510 80 L560 80" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead4)" />
+                    
+                    <path d="M250 170 L250 120 L320 120 L390 120" stroke="#333" stroke-width="2" fill="none" stroke-dasharray="5,5" />
+                    <path d="M470 170 L470 120" stroke="#333" stroke-width="2" fill="none" stroke-dasharray="5,5" />
+                    <path d="M620 170 L620 120" stroke="#333" stroke-width="2" fill="none" stroke-dasharray="5,5" />
+                    
+                    <path d="M250 170 L320 170" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead4)" />
+                    <path d="M470 210 L540 210" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead4)" />
+                    
+                    <!-- 矢印の先端 -->
+                    <defs>
+                        <marker id="arrowhead4" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+                        </marker>
+                    </defs>
+                </svg>
+                <p><strong>オンライン決済システムの基本的な流れと構成</strong></p>
+            </div>
+
+            <h3>Stripeを使った決済機能実装プロンプト例</h3>
+            <div class="prompt-instruction">
+                <strong>👉 使い方：</strong> <span class="term-tooltip">Stripe<span class="tooltip-text">オンライン決済を簡単に導入できるサービス。クレジットカード決済やサブスクリプション管理などの機能を提供します。</span></span>は人気の決済サービスで、比較的簡単に導入できます。以下のプロンプトで基本的な実装方法を教えてもらいましょう。
+            </div>
+            <div class="prompt-example">
+<button class="copy-btn" onclick="copyToClipboard(this)">コピー</button>
+Stripeを使ってオンラインショップに決済機能を追加する方法を教えてください。初心者にもわかりやすく説明をお願いします。
+
+【ショップの概要】
+- 洋服や雑貨を販売する小規模なECサイト
+- 商品をカートに入れて購入する一般的な流れ
+- クレジットカード決済に対応したい
+
+【知りたいこと】
+- Stripeとは何か、基本的な仕組み
+- 導入の手順（アカウント作成から実装まで）
+- 必要なコード例（フロントエンドとバックエンド）
+- テスト方法
+- 注意点や一般的なトラブル対処法
+
+【レベル】
+- プログラミングの基本は理解していますが、決済システムは初めてです
+- なるべく簡単な方法から始めたいです
+- セキュリティ面の基本的な注意点も知りたいです
+
+専門用語はなるべく避けるか、使う場合は説明を加えてください。実際のコード例と図解があるとわかりやすいです。
+</div>
+
+            <h3>サブスクリプション管理システム実装プロンプト例</h3>
+            <div class="prompt-instruction">
+                <strong>👉 使い方：</strong> <span class="term-tooltip">サブスクリプション<span class="tooltip-text">定期的に料金を支払って継続的にサービスを利用する仕組み。月額制や年額制のサービスがこれにあたります。</span></span>型のビジネスモデル（月額課金など）を実装したい場合のプロンプト例です。
+            </div>
+            <div class="prompt-example">
+<button class="copy-btn" onclick="copyToClipboard(this)">コピー</button>
+月額制のサブスクリプションサービスを作りたいです。決済システムの実装方法を初心者向けに教えてください。
+
+【サービスの概要】
+- オンライン学習プラットフォーム
+- 無料プラン、月額プラン、年額プランの3種類を提供
+- トライアル期間（14日間）を設けたい
+- 支払い方法はクレジットカードを予定
+
+【知りたいこと】
+- サブスクリプション管理の基本的な仕組み
+- 料金プランの設定方法
+- 無料トライアルから有料への移行の仕組み
+- 更新・キャンセル処理の方法
+- 顧客への請求書発行システム
+
+【レベル】
+- ウェブ開発の基本は理解していますが、決済システムは初めてです
+- 具体的な実装手順とコード例があると助かります
+- 一般的なサブスクリプションビジネスの注意点も知りたいです
+
+専門用語はなるべく避け、使う場合は説明を加えてください。可能であれば図解も入れていただけると理解しやすいです。
+</div>
+
+            <h3>複数決済方法対応プロンプト例</h3>
+            <div class="prompt-instruction">
+                <strong>👉 使い方：</strong> クレジットカード以外にも複数の決済方法（銀行振込、電子マネーなど）に対応したい場合のプロンプト例です。
+            </div>
+            <div class="prompt-example">
+<button class="copy-btn" onclick="copyToClipboard(this)">コピー</button>
+ECサイトに複数の決済方法を導入したいです。初心者にもわかりやすく実装方法を教えてください。
+
+【導入したい決済方法】
+- クレジットカード決済
+- コンビニ決済
+- 銀行振込
+- QRコード決済（PayPay、LINE Payなど）
+- 後払い決済
+
+【知りたいこと】
+- 各決済方法の基本的な仕組みと違い
+- 導入しやすい決済代行サービスの比較
+- システム連携の基本的な方法
+- 会計処理や管理画面の作り方
+- 初期費用や手数料の一般的な相場
+
+【レベル】
+- 小規模ECサイトを運営しているが、決済システムの知識は少ない
+- できるだけコストを抑えて複数の決済方法を導入したい
+- 導入の優先順位や段階的な実装方法も知りたい
+
+専門用語は避けるか、使う場合は説明を加えてください。実装の大まかな流れと注意点を中心に教えてください。
+</div>
+        </section>
+
+        <section id="sns">
+            <h2>SNS開発</h2>
+            <p><span class="term-tooltip">SNS<span class="tooltip-text">ソーシャル・ネットワーキング・サービスの略。ユーザー同士のつながりやコンテンツ共有を主な機能とするサービスです。</span></span>（ソーシャル・ネットワーキング・サービス）はユーザー同士のつながりを重視したウェブサービスです。Twitter、Instagram、Facebookなどが代表例です。</p>
+
+            <div class="concept-visual">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 350" width="800" height="350">
+                    <!-- 背景 -->
+                    <rect width="800" height="350" fill="#f9fafb" rx="10" ry="10" />
+                    
+                    <!-- SNSプラットフォーム -->
+                    <rect x="250" y="50" width="300" height="250" rx="10" ry="10" fill="#f5f5f5" stroke="#666" stroke-width="2" />
+                    <text x="400" y="35" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold" fill="#333">SNSプラットフォーム</text>
+                    
+                    <!-- 主要機能 -->
+                    <rect x="270" y="70" width="120" height="50" rx="5" ry="5" fill="#e6f7ff" stroke="#1890ff" stroke-width="1" />
+                    <text x="330" y="100" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">ユーザー管理</text>
+                    
+                    <rect x="410" y="70" width="120" height="50" rx="5" ry="5" fill="#fff0f6" stroke="#eb2f96" stroke-width="1" />
+                    <text x="470" y="100" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">投稿・共有</text>
+                    
+                    <rect x="270" y="140" width="120" height="50" rx="5" ry="5" fill="#f9f0ff" stroke="#722ed1" stroke-width="1" />
+                    <text x="330" y="170" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">いいね・コメント</text>
+                    
+                    <rect x="410" y="140" width="120" height="50" rx="5" ry="5" fill="#fcffe6" stroke="#a0d911" stroke-width="1" />
+                    <text x="470" y="170" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">フォロー関係</text>
+                    
+                    <rect x="270" y="210" width="120" height="50" rx="5" ry="5" fill="#e6fffb" stroke="#13c2c2" stroke-width="1" />
+                    <text x="330" y="240" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">タイムライン</text>
+                    
+                    <rect x="410" y="210" width="120" height="50" rx="5" ry="5" fill="#fff2e8" stroke="#fa541c" stroke-width="1" />
+                    <text x="470" y="240" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">通知システム</text>
+                    
+                    <!-- ユーザー -->
+                    <circle cx="120" cy="100" r="30" fill="#1890ff" opacity="0.8" />
+                    <text x="120" y="105" font-family="Arial" font-size="14" text-anchor="middle" fill="#fff">ユーザーA</text>
+                    
+                    <circle cx="120" cy="200" r="30" fill="#52c41a" opacity="0.8" />
+                    <text x="120" y="205" font-family="Arial" font-size="14" text-anchor="middle" fill="#fff">ユーザーB</text>
+                    
+                    <circle cx="120" cy="300" r="30" fill="#fa8c16" opacity="0.8" />
+                    <text x="120" y="305" font-family="Arial" font-size="14" text-anchor="middle" fill="#fff">ユーザーC</text>
+                    
+                    <circle cx="680" cy="100" r="30" fill="#eb2f96" opacity="0.8" />
+                    <text x="680" y="105" font-family="Arial" font-size="14" text-anchor="middle" fill="#fff">ユーザーD</text>
+                    
+                    <circle cx="680" cy="200" r="30" fill="#722ed1" opacity="0.8" />
+                    <text x="680" y="205" font-family="Arial" font-size="14" text-anchor="middle" fill="#fff">ユーザーE</text>
+                    
+                    <circle cx="680" cy="300" r="30" fill="#13c2c2" opacity="0.8" />
+                    <text x="680" y="305" font-family="Arial" font-size="14" text-anchor="middle" fill="#fff">ユーザーF</text>
+                    
+                    <!-- 接続線 -->
+                    <path d="M150 100 L250 100" stroke="#1890ff" stroke-width="2" fill="none" />
+                    <path d="M150 200 L250 200" stroke="#52c41a" stroke-width="2" fill="none" />
+                    <path d="M150 300 L250 250" stroke="#fa8c16" stroke-width="2" fill="none" />
+                    
+                    <path d="M550 100 L650 100" stroke="#eb2f96" stroke-width="2" fill="none" />
+                    <path d="M550 200 L650 200" stroke="#722ed1" stroke-width="2" fill="none" />
+                    <path d="M550 250 L650 300" stroke="#13c2c2" stroke-width="2" fill="none" />
+                    
+                    <!-- 相互作用 -->
+                    <path d="M120 130 L120 170" stroke="#333" stroke-width="1" stroke-dasharray="5,5" />
+                    <text x="135" y="155" font-family="Arial" font-size="12" fill="#333">フォロー</text>
+                    
+                    <path d="M680 130 L680 170" stroke="#333" stroke-width="1" stroke-dasharray="5,5" />
+                    <text x="695" y="155" font-family="Arial" font-size="12" fill="#333">フォロー</text>
+                    
+                    <path d="M140 110 L660 90" stroke="#333" stroke-width="1" stroke-dasharray="5,5" />
+                    <text x="400" y="85" font-family="Arial" font-size="12" fill="#333">いいね・コメント</text>
+                </svg>
+                <p><strong>SNSアプリケーションの基本構造と相互作用</strong></p>
+            </div>
+
+            <h3>リアルタイム機能実装プロンプト例</h3>
+            <div class="prompt-instruction">
+                <strong>👉 使い方：</strong> <span class="term-tooltip">リアルタイム機能<span class="tooltip-text">更新やメッセージの送受信などが即座に反映される機能。チャット、通知、ライブ更新などがこれにあたります。</span></span>とは、チャットやライブ更新など即時性の高い機能です。以下のプロンプトでリアルタイムチャット機能の実装方法を教えてもらいましょう。
+            </div>
+            <div class="prompt-example">
+<button class="copy-btn" onclick="copyToClipboard(this)">コピー</button>
+リアルタイムチャット機能をウェブアプリに実装する方法を教えてください。初心者にもわかりやすく説明をお願いします。
+
+【実現したい機能】
+- 1対1のプライベートチャット
+- グループチャット（複数ユーザー）
+- メッセージの既読確認
+- オンライン状態の表示
+- 画像送信機能
+
+【知りたいこと】
+- リアルタイム通信の基本的な仕組み
+- 実装に必要な技術や道具
+- 簡単な実装手順
+- チャットUIの基本的な作り方
+- 初心者でも実装できるシンプルな方法
+
+【レベル】
+- ウェブ開発の基本は理解していますが、リアルタイム機能は初めてです
+- 段階的に実装できる方法を知りたいです
+- 実際のコード例があると理解しやすいです
+
+専門用語はなるべく避け、使う場合は補足説明をつけてください。図解やコード例があるとわかりやすいです。
+</div>
+
+            <h3>タイムライン実装プロンプト例</h3>
+            <div class="prompt-instruction">
+                <strong>👉 使い方：</strong> <span class="term-tooltip">タイムライン<span class="tooltip-text">SNSの中心的機能で、フォローしているユーザーや関連コンテンツの投稿を時系列で表示する機能です。</span></span>はSNSの中核となる機能です。以下のプロンプトでタイムライン機能の実装方法を教えてもらいましょう。
+            </div>
+            <div class="prompt-example">
+<button class="copy-btn" onclick="copyToClipboard(this)">コピー</button>
+SNSアプリのタイムライン機能を実装する方法を教えてください。初心者にもわかりやすく説明をお願いします。
+
+【実現したい機能】
+- ユーザーのフォローしている人の投稿を表示
+- 新着順で表示
+- いいね・コメント機能
+- 無限スクロール（追加読み込み）
+- 画像や動画の表示
+
+【知りたいこと】
+- タイムラインの基本的な仕組み
+- 効率的なデータ取得方法
+- フロントエンドの実装方法
+- パフォーマンスを考慮した設計
+- 初心者でもわかる簡単な実装例
+
+【レベル】
+- ウェブ開発の基本は理解していますが、SNS機能は初めて実装します
+- なるべくシンプルな方法から始めたいです
+- 段階的に機能を追加していける方法を知りたいです
+
+専門用語は使う場合は説明を加えてください。図解や具体的なコード例があると特に理解しやすいです。
+</div>
+
+            <h3>コンテンツモデレーションシステム実装プロンプト例</h3>
+            <div class="prompt-instruction">
+                <strong>👉 使い方：</strong> <span class="term-tooltip">コンテンツモデレーション<span class="tooltip-text">投稿内容を監視し、不適切なコンテンツ（暴力、ヘイトスピーチ、違法内容など）をフィルタリングする仕組みです。</span></span>とは、不適切な投稿を検出・対応するシステムです。以下のプロンプトで実装方法を教えてもらいましょう。
+            </div>
+            <div class="prompt-example">
+<button class="copy-btn" onclick="copyToClipboard(this)">コピー</button>
+SNSアプリで不適切な投稿をフィルタリングするシステムを実装したいです。初心者向けに説明をお願いします。
+
+【必要な機能】
+- テキスト投稿の不適切な言葉のフィルタリング
+- 画像の不適切なコンテンツの検出
+- ユーザーからの報告機能
+- 管理者向けの審査システム
+
+【知りたいこと】
+- 基本的なコンテンツモデレーションの方法
+- 簡単に実装できるフィルタリング方法
+- 既存のサービス・APIで利用できるもの
+- 初心者でも実装できる範囲と手順
+- 法律的な注意点や責任範囲
+
+【レベル】
+- プログラミングの基礎は理解していますが、AI技術などは詳しくありません
+- まずはシンプルな方法から始めたいです
+- 将来的には高度な方法も知りたいです
+
+専門用語はなるべく避け、使う場合は説明を加えてください。段階的に実装できる方法と、それぞれのメリット・デメリットを教えてください。
+</div>
+        </section>
+
+        <section id="business">
+            <h2>事業活用事例</h2>
+            <p>Claude 3.7を活用した事業開発と業務効率化の具体的な事例を紹介します。プログラミング初心者でも実践できる方法を中心に解説します。</p>
+
+            <div class="card">
+                <div class="card-title">事業開発におけるClaude 3.7活用の利点</div>
+                <ul>
+                    <li><strong>開発スピードの向上：</strong> 専門家がいなくても、基本的なウェブサイトやアプリの開発が可能に</li>
+                    <li><strong>コスト削減：</strong> 外注せずに自分たちで開発・運用できる部分が増える</li>
+                    <li><strong>アイデア実現の敷居を下げる：</strong> プロトタイプを素早く作れるので、アイデアの検証が容易に</li>
+                    <li><strong>学習効率の向上：</strong> わからないことをその場で質問し、実践的に学べる</li>
+                    <li><strong>ドキュメント作成の効率化：</strong> 仕様書やマニュアルなどの文書作成を支援</li>
+                </ul>
+            </div>
+
+            <h3>MVPの迅速な開発</h3>
+            <div class="prompt-instruction">
+                <strong>👉 使い方：</strong> <span class="term-tooltip">MVP（Minimum Viable Product）<span class="tooltip-text">最小限の機能を持った製品版。アイデアを素早く形にして市場の反応を見るための手法です。</span></span>とは、最小限の機能を持った製品版のことです。アイデアを素早く形にして検証するのに役立ちます。以下のプロンプトでMVP開発の支援を依頼できます。
+            </div>
+            <div class="prompt-example">
+<button class="copy-btn" onclick="copyToClipboard(this)">コピー</button>
+新しいビジネスアイデアを形にするために、MVPを素早く開発する方法を教えてください。初心者向けに説明をお願いします。
+
+【ビジネスアイデア】
+- 地域の飲食店とユーザーをつなぐデリバリーサービス
+- ユーザーはアプリで注文、地元の配達パートナーが届ける
+- まずは小さな地域でテストしたい
+
+【必要な機能（MVP）】
+- 飲食店側：メニュー登録、注文確認
+- ユーザー側：店舗・メニュー閲覧、注文
+- 配達パートナー側：注文受付、配達完了報告
+- 支払い機能（シンプルなもの）
+
+【現状と課題】
+- プログラミング経験は少ないが、簡単なウェブサイト制作経験はある
+- 短期間（1〜2ヶ月）でテスト可能な形にしたい
+- 予算は限られている
+- スケーラビリティよりも、まずは検証したい
+
+【知りたいこと】
+- MVPを作るための最短ルート
+- 使えるツールやサービス（ノーコード/ローコードも含めて）
+- 段階的な開発計画
+- 初期テストの方法
+
+専門用語はなるべく避け、使う場合は説明を加えてください。実際に成功した類似サービスの初期段階の例なども教えていただけると参考になります。
+</div>
+
+            <h3>既存ビジネスのAI強化</h3>
+            <div class="prompt-instruction">
+                <strong>👉 使い方：</strong> すでに運営しているビジネスにAIを取り入れて強化したい場合のプロンプト例です。
+            </div>
+            <div class="prompt-example">
+<button class="copy-btn" onclick="copyToClipboard(this)">コピー</button>
+既存の小売店ビジネスにAI機能を取り入れて強化する方法を教えてください。初心者向けに説明をお願いします。
+
+【ビジネスの現状】
+- 実店舗と小規模なECサイトを運営している雑貨店
+- 顧客データ（購入履歴、会員情報）はあるが十分に活用できていない
+- マーケティングや在庫管理は経験と勘に頼っている部分が多い
+- 限られた予算と人員で運営している
+
+【導入したいAI機能】
+- 顧客の購入傾向分析と商品レコメンド
+- 在庫管理の最適化
+- チャットボットによる顧客サポート
+- SNSマーケティングの強化
+
+【知りたいこと】
+- 初心者でも導入できるAIツールやサービス
+- 導入の優先順位（どの機能から始めるべきか）
+- 導入に必要なステップ（データの準備など）
+- 導入によって期待できる効果
+- 導入コストと運用負荷の目安
+
+【レベル】
+- IT知識は基本的なレベル（エクセル操作、簡単なウェブサイト管理程度）
+- プログラミング経験はほとんどない
+- できるだけ少ない学習コストで導入したい
+
+専門用語はなるべく避け、使う場合は説明を加えてください。実際の導入事例や成功例があれば教えていただけると参考になります。
+</div>
+
+            <h3>ビジネスプロセス自動化</h3>
+            <div class="prompt-instruction">
+                <strong>👉 使い方：</strong> <span class="term-tooltip">ビジネスプロセス自動化<span class="tooltip-text">繰り返し行われる業務タスクを自動化すること。時間とコストの削減、ヒューマンエラーの防止などのメリットがあります。</span></span>とは、定型業務を自動化して効率化することです。以下のプロンプトで自動化の方法を教えてもらいましょう。
+            </div>
+            <div class="prompt-example">
+<button class="copy-btn" onclick="copyToClipboard(this)">コピー</button>
+日常業務の自動化に取り組みたいです。プログラミング初心者でもできる方法を教えてください。
+
+【自動化したい業務】
+- 顧客データの入力と管理（現在はエクセルで手動管理）
+- 定期的なレポート作成（売上、在庫、顧客動向など）
+- メールでの問い合わせ対応（よくある質問への回答）
+- SNSへの定期投稿
+- 請求書作成と送付
+
+【現状と課題】
+- 小規模事業でIT専任スタッフはいない
+- エクセル、ワード、メールソフトは使用している
+- これらの業務に多くの時間を費やしている
+- 効率化して本業に集中したい
+
+【知りたいこと】
+- プログラミング初心者でも使えるツールやサービス
+- 自動化の始め方と優先順位
+- 費用対効果の高い自動化領域
+- 段階的に進められる手順
+- 失敗しないためのポイント
+
+専門用語はなるべく避け、使う場合は説明を加えてください。実際の画面例や具体的な手順があるとわかりやすいです。
+</div>
+
+            <div class="example-dialog">
+                <div class="example-dialog-header">実際の活用例：オンラインショップ開発</div>
+                
+                <div class="example-message message-human">
+                    <div class="message-label">あなた</div>
+                    <p>小さなハンドメイドアクセサリーのオンラインショップを作りたいです。プログラミング初心者ですが、自分で構築したいと思っています。どうすれば良いですか？</p>
+                </div>
+                
+                <div class="example-message message-claude">
+                    <div class="message-label">Claude 3.7</div>
+                    <p>ハンドメイドアクセサリーのオンラインショップ、素敵ですね！初心者でも構築できる方法をいくつかご紹介します。</p>
+                    <p>【選択肢1：ノーコードツール】<br>
+                    - Shopify：最も簡単で機能も充実しています。月額$29〜<br>
+                    - Wix：ドラッグ&ドロップで直感的に作成できます<br>
+                    - Square Online：小規模なら無料プランもあります</p>
+                    <p>【選択肢2：WordPress + WooCommerce】<br>
+                    少しだけ技術的知識が必要ですが、自由度が高く費用を抑えられます。手順を詳しく説明します...</p>
+                </div>
+                
+                <div class="example-message message-human">
+                    <div class="message-label">あなた</div>
+                    <p>WordPress + WooCommerceの方が興味があります。具体的な始め方を教えてください。また、商品画像の効果的な見せ方についてもアドバイスが欲しいです。</p>
+                </div>
+                
+                <div class="example-message message-claude">
+                    <div class="message-label">Claude 3.7</div>
+                    <p>WordPress + WooCommerceでオンラインショップを始める手順を説明します。</p>
+                    <p>【ステップ1：ドメインとレンタルサーバーの契約】<br>
+                    1. ドメイン名を決める（例：yourhandmadejewelry.com）<br>
+                    2. レンタルサーバーを選ぶ（初心者にはXサーバー、ConoHa WINGなどがおすすめ）<br>
+                    3. 契約して、ドメインとサーバーを連携させる</p>
+                    <p>【ステップ2：WordPressのインストール】<br>
+                    多くのレンタルサーバーでは「かんたんインストール」機能があります...</p>
+                    <p>【商品画像の効果的な見せ方】<br>
+                    1. 自然光を活用し、影を最小限に<br>
+                    2. 複数の角度から撮影する<br>
+                    3. モデルや手に着けた状態の写真も追加する<br>
+                    4. 背景はシンプルに（白または淡いカラー）<br>
+                    5. 商品の細部がわかるクローズアップ写真も...</p>
+                </div>
+            </div>
+            
+            <div class="note-box">
+                <strong>初心者向けアドバイス：</strong> Claude 3.7を活用する際は、自分のビジネスやプロジェクトの具体的な状況を詳しく伝えることで、より実用的なアドバイスを得られます。「これはどういう意味ですか？」と遠慮なく質問したり、「もっと簡単な方法はありますか？」と代替案を求めたりすることも大切です。
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2025 Claude 3.7 エンジニアリングガイド (初心者向け)</p>
+            <p>最終更新: 2025年3月</p>
+        </div>
+    </footer>
+
+    <script>
+        // タブ切り替え機能
+        function switchTab(event, tabId) {
+            // タブコンテンツをすべて非表示
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // すべてのタブからアクティブクラスを削除
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // クリックされたタブをアクティブに
+            event.currentTarget.classList.add('active');
+            
+            // 対応するコンテンツを表示
+            document.getElementById(tabId).classList.add('active');
+        }
+        
+        // コピー機能
+        function copyToClipboard(button) {
+            const promptExample = button.parentElement;
+            const textToCopy = promptExample.innerText.replace('コピー', '').trim();
+            
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const originalText = button.innerText;
+                button.innerText = 'コピー完了!';
+                setTimeout(() => {
+                    button.innerText = originalText;
+                }, 2000);
+            }).catch(err => {
+                console.error('クリップボードへのコピーに失敗しました:', err);
+            });
+        }
+        
+        // ナビゲーションのスムーススクロール
+        document.querySelectorAll('nav a').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // アクティブクラスの切り替え
+                document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+                this.classList.add('active');
+                
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                
+                window.scrollTo({
+                    top: targetElement.offsetTop - 60,
+                    behavior: 'smooth'
+                });
+            });
+        });
+        
+        // スクロールに応じてナビゲーションのアクティブ状態を更新
+        window.addEventListener('scroll', () => {
+            const scrollPosition = window.scrollY + 100;
+            
+            document.querySelectorAll('section').forEach(section => {
+                if (section.offsetTop <= scrollPosition && section.offsetTop + section.offsetHeight > scrollPosition) {
+                    const id = section.getAttribute('id');
+                    document.querySelectorAll('nav a').forEach(a => {
+                        a.classList.remove('active');
+                        if (a.getAttribute('href') === `#${id}`) {
+                            a.classList.add('active');
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
