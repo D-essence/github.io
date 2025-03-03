@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Claude 3.7 エンジニアリングガイド (初心者向け)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         :root {
             --primary: #7a5af5;
@@ -415,13 +416,146 @@
             height: auto;
         }
 
+        /* モバイル対応のスタイル */
         @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            h2 {
+                font-size: 1.5rem;
+            }
+            
+            h3 {
+                font-size: 1.2rem;
+            }
+            
+            .container {
+                padding: 0 0.75rem;
+            }
+            
+            .nav-container {
+                padding: 0.5rem 0;
+            }
+            
             .nav-links {
                 display: none;
             }
-
+            
+            .mobile-menu-btn {
+                display: block;
+                cursor: pointer;
+                background: none;
+                border: none;
+                padding: 0.5rem;
+                margin-right: 0.5rem;
+            }
+            
+            .mobile-menu-btn span {
+                display: block;
+                width: 25px;
+                height: 3px;
+                background-color: var(--text);
+                margin: 5px 0;
+                transition: 0.3s;
+            }
+            
+            .mobile-menu {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: var(--bg);
+                z-index: 1000;
+                padding: 2rem;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+            }
+            
+            .mobile-menu.active {
+                display: flex;
+            }
+            
+            .mobile-menu a {
+                color: var(--text);
+                text-decoration: none;
+                font-size: 1.2rem;
+                font-weight: 500;
+                margin: 1rem 0;
+                padding: 0.5rem 1rem;
+                display: block;
+                width: 80%;
+                border-radius: 5px;
+            }
+            
+            .mobile-menu a:hover {
+                background-color: var(--secondary);
+            }
+            
+            .close-menu {
+                position: absolute;
+                top: 1rem;
+                right: 1rem;
+                background: none;
+                border: none;
+                font-size: 1.5rem;
+                cursor: pointer;
+            }
+            
             .feature-grid {
                 grid-template-columns: 1fr;
+            }
+            
+            .card, .prompt-example, .prompt-instruction, .note-box {
+                padding: 1rem;
+                margin-bottom: 1rem;
+                font-size: 0.95rem;
+            }
+            
+            .copy-btn {
+                padding: 0.3rem 0.6rem;
+                font-size: 0.75rem;
+            }
+            
+            .workflow-step {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .workflow-step:not(:last-child)::after {
+                display: none;
+            }
+            
+            .step-number {
+                margin-bottom: 0.5rem;
+            }
+            
+            .tabs {
+                flex-wrap: wrap;
+            }
+            
+            .tab {
+                padding: 0.4rem 0.6rem;
+                font-size: 0.9rem;
+                flex-grow: 1;
+                text-align: center;
+            }
+            
+            .example-dialog {
+                font-size: 0.9rem;
+            }
+            
+            .example-message {
+                padding: 0.75rem;
+            }
+            
+            svg {
+                width: 100%;
+                height: auto;
             }
         }
     </style>
@@ -449,7 +583,25 @@
                     <a href="#sns">SNS開発</a>
                     <a href="#business">事業活用</a>
                 </div>
+                <button class="mobile-menu-btn">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
             </nav>
+            
+            <div class="mobile-menu">
+                <button class="close-menu">✕</button>
+                <a href="#intro">はじめに</a>
+                <a href="#beginner">初心者ガイド</a>
+                <a href="#general">基本活用法</a>
+                <a href="#backend">バックエンド開発</a>
+                <a href="#frontend">フロントエンド開発</a>
+                <a href="#security">セキュリティ</a>
+                <a href="#payment">決済システム</a>
+                <a href="#sns">SNS開発</a>
+                <a href="#business">事業活用</a>
+            </div>
         </div>
     </div>
 
@@ -2028,11 +2180,65 @@ SNSアプリで不適切な投稿をフィルタリングするシステムを�
                 }, 2000);
             }).catch(err => {
                 console.error('クリップボードへのコピーに失敗しました:', err);
+                // モバイルでのフォールバック
+                const textarea = document.createElement('textarea');
+                textarea.value = textToCopy;
+                textarea.style.position = 'fixed';
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    button.innerText = 'コピー完了!';
+                    setTimeout(() => {
+                        button.innerText = originalText;
+                    }, 2000);
+                } catch (err) {
+                    console.error('クリップボードへのコピーに失敗しました:', err);
+                    alert('コピーに失敗しました。テキストを長押しして手動でコピーしてください。');
+                }
+                document.body.removeChild(textarea);
             });
         }
         
+        // モバイルメニュー制御
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+            const mobileMenu = document.querySelector('.mobile-menu');
+            const closeMenuBtn = document.querySelector('.close-menu');
+            
+            mobileMenuBtn.addEventListener('click', function() {
+                mobileMenu.classList.add('active');
+                document.body.style.overflow = 'hidden'; // スクロール防止
+            });
+            
+            closeMenuBtn.addEventListener('click', function() {
+                mobileMenu.classList.remove('active');
+                document.body.style.overflow = ''; // スクロール再開
+            });
+            
+            // モバイルメニューの各リンクをクリックしたらメニューを閉じる
+            document.querySelectorAll('.mobile-menu a').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    mobileMenu.classList.remove('active');
+                    document.body.style.overflow = '';
+                    
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    
+                    setTimeout(() => {
+                        window.scrollTo({
+                            top: targetElement.offsetTop - 60,
+                            behavior: 'smooth'
+                        });
+                    }, 300);
+                });
+            });
+        });
+        
         // ナビゲーションのスムーススクロール
-        document.querySelectorAll('nav a').forEach(anchor => {
+        document.querySelectorAll('nav .nav-links a').forEach(anchor => {
             anchor.addEventListener('click', function(e) {
                 e.preventDefault();
                 
@@ -2065,6 +2271,45 @@ SNSアプリで不適切な投稿をフィルタリングするシステムを�
                     });
                 }
             });
+        });
+        
+        // タッチデバイス向けのツールチップ対応
+        document.addEventListener('DOMContentLoaded', function() {
+            if ('ontouchstart' in window) {
+                document.querySelectorAll('.term-tooltip').forEach(tooltip => {
+                    tooltip.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const tooltipText = this.querySelector('.tooltip-text');
+                        
+                        // 全てのツールチップを非表示に
+                        document.querySelectorAll('.tooltip-text').forEach(tip => {
+                            if (tip !== tooltipText) {
+                                tip.style.visibility = 'hidden';
+                                tip.style.opacity = '0';
+                            }
+                        });
+                        
+                        // クリックされたツールチップを表示/非表示切り替え
+                        if (tooltipText.style.visibility === 'visible') {
+                            tooltipText.style.visibility = 'hidden';
+                            tooltipText.style.opacity = '0';
+                        } else {
+                            tooltipText.style.visibility = 'visible';
+                            tooltipText.style.opacity = '1';
+                        }
+                    });
+                });
+                
+                // ドキュメント全体をクリックしたら全てのツールチップを非表示に
+                document.addEventListener('click', function(e) {
+                    if (!e.target.closest('.term-tooltip')) {
+                        document.querySelectorAll('.tooltip-text').forEach(tip => {
+                            tip.style.visibility = 'hidden';
+                            tip.style.opacity = '0';
+                        });
+                    }
+                });
+            }
         });
     </script>
 </body>
